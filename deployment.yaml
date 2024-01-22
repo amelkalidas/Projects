@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ApacheImage-Deployment
+  labels:
+    app: Apache
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: Apache
+  template:
+    metadata:
+      labels:
+        app: Apache
+    spec:
+      containers:
+      - name: Apache
+        image: ameldocker98/vault:ApacheImageV3
+        ports:
+        - containerPort: 80
