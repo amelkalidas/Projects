@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: apacheImage-Deployment
+  name: apacheimage-deployment
   labels:
     app: apache
 spec:
