@@ -5,7 +5,7 @@ metadata:
 spec:
   type: NodePort
   selector:
-    name: apache
+    app: apache
   ports:
     - port: 80
       # By default and for convenience, the `targetPort` is set to
