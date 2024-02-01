@@ -1,0 +1,16 @@
+---
+- name: Software Installation on Master Node
+  become: true
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Executing on Master
+      script: master.sh
+
+- name: Software Installation on  Test and Prod Node
+  become: true
+  hosts: Nodes
+  tasks:
+    - name: Executing on Nodes
+      script: Nodes.sh      
+
