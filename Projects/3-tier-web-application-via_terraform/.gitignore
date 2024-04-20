@@ -1,7 +1,0 @@
-Terraform/m3.tfplan
-Terraform/.terraform
-Terraform/.git
-Terraform/.terraform.lock.hcl
-Terraform/terraform.tfstate
-Terraform/**.tfstate.**
-myplan
