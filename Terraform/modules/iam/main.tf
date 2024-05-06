@@ -18,16 +18,21 @@ resource "aws_iam_role" "ec2ssmrole_dev" {
 # Attach the policies to the role
 resource "aws_iam_role_policy_attachment" "s3_read_access_attach" {
   role       = aws_iam_role.ec2ssmrole_dev.name
-  policy_arn = data.aws_iam_policy.s3.arn
+  policy_arn = var.aws_iam_policy_s3
 }
 
 resource "aws_iam_role_policy_attachment" "ssm_managed_attach" {
   role       = aws_iam_role.ec2ssmrole_dev.name
-  policy_arn = data.aws_iam_policy.ssm.arn
+  policy_arn = var.aws_iam_policy_ssm
 }
 
 resource "aws_iam_instance_profile" "ec2_profile" {
     name    = "ssmands3role"
     role    = aws_iam_role.ec2ssmrole_dev.name
+  
+}
+
+output "instance_profile_name" {
+  value = aws_iam_instance_profile.ec2_profile.name
   
 }
