@@ -7,11 +7,6 @@ variable "Location" {
     default = "centralindia"  
 }
 
-variable "admin_password" {
-  description = "The admin password for the Linux VM"
-  type        = string  
-}
-
 variable "storageaccount" {
   default = "opsprodfileshare01"
   type = string

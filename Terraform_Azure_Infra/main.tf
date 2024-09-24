@@ -100,8 +100,10 @@ resource "azurerm_linux_virtual_machine" "prod_public_Vm" {
   location            = var.Location
   size                = "Standard_B1s"
   admin_username      = "adminuser"
-  disable_password_authentication = false       
-  admin_password = var.admin_password
+  admin_ssh_key {
+    username = "azureuser"
+    public_key = file("C:\\Users\\Lenovo\\.ssh\\id_rsa.pub") 
+  }
   network_interface_ids = [
     azurerm_network_interface.PublicVM_NIC.id,
   ]
@@ -124,8 +126,10 @@ resource "azurerm_linux_virtual_machine" "prod_Private_Vm" {
   location            = var.Location
   size                = "Standard_B1s"
   admin_username      = "adminuser"
-  disable_password_authentication = false
-  admin_password = var.admin_password
+  admin_ssh_key {
+    username = "azureuser"
+    public_key = file("C:\\Users\\Lenovo\\.ssh\\id_rsa.pub") 
+  }
   network_interface_ids = [
     azurerm_network_interface.prvt_db_nic.id,
   ]
