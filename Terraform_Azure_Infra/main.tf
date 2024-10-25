@@ -1,218 +1,61 @@
 # Resource Group configuration
 
-resource "azurerm_resource_group" "prod_rg" {
-  name     = "OPS_PROD_RG"
-  location = var.Location
+module "resource_group" {
+  source = "./Modules/ResourceGroup"
+  Location = var.Location
+  prod_rg_name = var.prod_rg_name
+  test_rg_name = var.test_rg_name  
 }
 
-resource "azurerm_resource_group" "Test_RG01" {
-  name     = "RG01"
-  location = var.Location
-  tags = {
-    Owner = "Amel"
-    ORG = "DevOps"
-  }
+module "vnet_configuration" {
+  source = "./Modules/Vnet"
+  prod_vnet_name = var.prod_vnet_name
+  prod_vnet_address-prefix = var.prod_vnet_address-prefix
+  Location = module.resource_group.rg_location
+  prod_rg_name = module.resource_group.prod_rg_name
+  publi_sg_name = var.public_sg_name
+  private_sg_name = var.private_sg_name
+  public_subnet_name = var.public_subnet_name
+  private_subnet_name = var.private_subnet_name
 }
 
-# Security Group
-
-resource "azurerm_network_security_group" "public_sg" {
-  name                = "OPS_Public_SG"
-  location            = var.Location
-  resource_group_name = azurerm_resource_group.prod_rg.name
+module "Vm" {
+  source = "./Modules/VirtualMachines"
+  Location = module.resource_group.rg_location
+  prod_rg_name = module.resource_group.prod_rg_name
+  public_sg_name = var.public_sg_name
+  private_sg_name = var.private_sg_name
+  public_subnet_name = module.vnet_configuration.prod_public_subnet_name
+  private_subnet_name = module.vnet_configuration.prod_private_subnet_name
+  pub_vm_name = var.pub_vm_name
+  pub_vm_size = var.pub_vm_size
+  vm_admin_username = var.vm_admin_username
+  vm_image_sku = var.vm_image_sku
+  db_vm_name = var.db_vm_name
+  db_vm_size = var.db_vm_size
+  public_vm_nic_id = module.vnet_configuration.public_vm_nic_id
+  db_vm_nic_id = module.vnet_configuration.db_vm_nic_id
 }
 
-resource "azurerm_network_security_group" "private_sg" {
-  name = "ops_private_sg"
-  location = var.Location
-  resource_group_name = azurerm_resource_group.prod_rg.name
+module "storageaccout_staticwebsite" {
+  source = "./Modules/Storageaccount"
+  storageaccount = var.storageaccount
+  prod_rg_name = module.resource_group.prod_rg_name
+  Location = module.resource_group.rg_location
+  storage_account_type = var.storage_account_type
+  storage_replication_type = var.storage_replication_type
+  prod_public_subnet_id = module.vnet_configuration.prod_public_subnet_id
+  prod_private_subnet_id = module.vnet_configuration.prod_private_subnet_id
+  storage_fileshare_name = var.storage_fileshare_name
+  storage_fileshare_quota = var.storage_fileshare_quota
   
 }
 
-# Vnet Configuration
-
-resource "azurerm_virtual_network" "Prod_vnet" {
-  name                = "OPS_PROD_VNET"
-  location            = var.Location
-  resource_group_name = azurerm_resource_group.prod_rg.name
-  address_space       = ["10.0.0.0/16"]
-  tags = {
-    environment = "DevOps"
-  }
-}
-
-resource "azurerm_subnet" "public_subnet01" {
-  name                 = "Ops_Public_subnet01"
-  resource_group_name  = azurerm_resource_group.prod_rg.name
-  virtual_network_name = azurerm_virtual_network.Prod_vnet.name
-  address_prefixes     = ["10.0.1.0/24"]
-  service_endpoints = [ "Microsoft.Storage" ]                               # this enables service endpoint for the storage accoutn to connect securely.
-
-}
-
-resource "azurerm_subnet" "private_subnet01" {
-  name                 = "ops_private_subnet01"
-  resource_group_name  = azurerm_resource_group.prod_rg.name
-  virtual_network_name = azurerm_virtual_network.Prod_vnet.name
-  default_outbound_access_enabled = false                                   # this makes the subnet Private.
-  address_prefixes     = ["10.0.2.0/24"]
-  service_endpoints = [ "Microsoft.Storage" ]                               # this enables service endpoint for the storage accoutn to connect securely.
-
-}
-
-# NIC Configuration 
-
-resource "azurerm_network_interface" "PublicVM_NIC" {
-
-  name                = "HOST01-nic"
-  location            = var.Location
-  resource_group_name = azurerm_resource_group.prod_rg.name
-
-  ip_configuration {
-    name                          = "public_bound"
-    subnet_id                     = azurerm_subnet.public_subnet01.id
-    private_ip_address_allocation = "Dynamic"
-  }
-
-  depends_on = [ azurerm_subnet.public_subnet01 ]
-}
-  
-resource "azurerm_network_interface" "prvt_db_nic" {
-  name = "db_nic"
-  location = var.Location
-  resource_group_name = azurerm_resource_group.prod_rg.name
-
-  ip_configuration {
-    name = "internal"
-    subnet_id = azurerm_subnet.private_subnet01.id
-    private_ip_address_allocation = "Dynamic"
-
-  }
-  
-  depends_on = [ azurerm_subnet.private_subnet01 ]
-}
-
-# VM Configuration
-
-resource "azurerm_linux_virtual_machine" "prod_public_Vm" {
-  name                = "Host-0"
-  resource_group_name = azurerm_resource_group.prod_rg.name
-  location            = var.Location
-  size                = "Standard_B1s"
-  admin_username      = "adminuser"
-  admin_ssh_key {
-    username = "azureuser"
-    public_key = file("C:\\Users\\Lenovo\\.ssh\\id_rsa.pub") 
-  }
-  network_interface_ids = [
-    azurerm_network_interface.PublicVM_NIC.id,
-  ]
-  os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
-  }
-
-  source_image_reference {
-    publisher = "Canonical"
-    offer     = "0001-com-ubuntu-server-jammy"
-    sku       = "22_04-lts"
-    version   = "latest"
-  }
-}
-
-resource "azurerm_linux_virtual_machine" "prod_Private_Vm" {
-  name                = "prod-db-01"
-  resource_group_name = azurerm_resource_group.prod_rg.name
-  location            = var.Location
-  size                = "Standard_B1s"
-  admin_username      = "adminuser"
-  admin_ssh_key {
-    username = "azureuser"
-    public_key = file("C:\\Users\\Lenovo\\.ssh\\id_rsa.pub") 
-  }
-  network_interface_ids = [
-    azurerm_network_interface.prvt_db_nic.id,
-  ]
-  os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
-  }
-
-  source_image_reference {
-    publisher = "Canonical"
-    offer     = "0001-com-ubuntu-server-jammy"
-    sku       = "22_04-lts"
-    version   = "latest"
-  }
-}
-
-# Storage Account
-
-resource "azurerm_storage_account" "prod_storage" {
-  name = var.storageaccount
-  resource_group_name = azurerm_resource_group.prod_rg.name
-  location = var.Location
-  account_tier = "Standard"
-  account_replication_type = "LRS"
-  tags = {
-    environment = "DevOps"
-
-  }  
-}
-resource "azurerm_storage_account_network_rules" "prod_storage_networkrule" {
-  storage_account_id = azurerm_storage_account.prod_storage.id
-
-  default_action             = "Allow"
-  virtual_network_subnet_ids = [azurerm_subnet.private_subnet01.id , azurerm_subnet.public_subnet01.id]
-  bypass                     = ["Metrics","AzureServices"]
-}
-
-resource "azurerm_storage_share" "prod_share" {
-  name                 = "prodshare"
-  storage_account_name = azurerm_storage_account.prod_storage.name
-  quota                = 50 
-}
-# Backup Configuration for the VM
-
-resource "azurerm_recovery_services_vault" "recovery_vault" {
-  name = var.recoveryvaultname
-  location = var.Location
-  resource_group_name = azurerm_resource_group.prod_rg.name
-  sku = "Standard"
-  immutability = "Disabled"
-  storage_mode_type = "LocallyRedundant"
-  soft_delete_enabled = false
-}
-
-resource "azurerm_backup_policy_vm" "vm_backup_policy" {
-  name = "Infrastrucure-server-backup-policy"
-  resource_group_name = azurerm_resource_group.prod_rg.name
-  recovery_vault_name = azurerm_recovery_services_vault.recovery_vault.name
-  
-  timezone = "UTC"
-
-  backup {
-    frequency = "Daily"
-    time = "22:00"
-  }
-  
-  retention_daily {
-    count = "7"
-  }
-
-}
-
-resource "azurerm_backup_protected_vm" "host0-backup" {
-  recovery_vault_name = azurerm_recovery_services_vault.recovery_vault.name
-  resource_group_name = azurerm_resource_group.prod_rg.name
-  source_vm_id = azurerm_linux_virtual_machine.prod_public_Vm.id
-  backup_policy_id = azurerm_backup_policy_vm.vm_backup_policy.id  
-  depends_on = [ azurerm_recovery_services_vault.recovery_vault ]
-}
-resource "azurerm_backup_protected_vm" "database-backup" {
-  recovery_vault_name = azurerm_recovery_services_vault.recovery_vault.name
-  resource_group_name = azurerm_resource_group.prod_rg.name
-  source_vm_id = azurerm_linux_virtual_machine.prod_Private_Vm.id
-  backup_policy_id = azurerm_backup_policy_vm.vm_backup_policy.id  
-  depends_on = [ azurerm_recovery_services_vault.recovery_vault ]
+module "recovery_vault_backup" {
+  source = "./Modules/Backup policies"
+  recoveryvaultname  = var.recoveryvaultname
+  prod_rg_name = module.resource_group.prod_rg_name
+  Location  = module.resource_group.rg_location
+  pub_vm_Id = module.Vm.pub_vm_Id
+  db_vm_id = module.Vm.db_vm_id
 }
