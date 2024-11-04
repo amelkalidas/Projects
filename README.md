@@ -3,7 +3,7 @@ Projects Overview
 This repository showcases a variety of projects, each demonstrating unique use cases and tools. 
 
 **1. NetflixCloneDevSecOps-PJ3** 
-A fun and interesting project designed to teach you about multiple tools and how to securely deploy an application on Kubernetes.
+A fun and interesting project designed to teach and learn about multiple tools and how to securely deploy an application on Kubernetes.
 
 Tools Used:
 
