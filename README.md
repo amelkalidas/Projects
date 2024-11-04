@@ -1,35 +1,70 @@
-Welcome to My project Repo
+Welcome to My Project Repo 🚀
+Projects Overview
+This repository showcases a variety of projects, each demonstrating unique use cases and tools. Dive in to explore and learn!
 
-Currently These are the Projects that I hold in this repo and the use case and the tools Used.
+**1. NetflixCloneDevSecOps-PJ3** 
+A fun and interesting project designed to teach you about multiple tools and how to securely deploy an application on Kubernetes.
 
-1 - 1. NetflixCloneDevSecOps-PJ3 = This is an fun and Interesting project to learn about multiple tools and how we can configure and securley deploy an application on Kubernetes. 
-          Tools used : .
-                Github for source code version control.
-                Jenkins for CI and CD Pipeline Automation
-                Sonarqube for Code Quality Check
-                OWASP to helps improve software security
-                DOCKER for creating an Image.
-                TRIVY for Scanning the file system and Image
-                Kubernetes for Deploying the Images as container and orchestrating the version updates and Loadbalancing.
-                Prometheus and Grafana for Monitoring 
-                Helm for Installing Node Exported on Kubernetes Cluster to Expose the metrics.
+Tools Used:
 
-2. Aws Infra using IAC ( terraform )  - stepping into IAC Concept, This project automates an 3-tier-web-application ( design provided by AWS in one of the workshops )
-               AWS Services Used :
-                                 VPC , Subnet , Security Groups , Ec2 Instances , Aurora Mysql Database , S3 Bucket , Loadbalancers, AutoScalling , IAM
-               Using Terraform I have deployed an 3-tier-webapplication on AWS cloud , Modulising each component so that each Module can be reused instead of hardcodding each resources.
-               Image : [Image](https://github.com/amelkalidas/Projects/blob/main/2.%20Aws%20Infra%20using%20IAC%20(%20terraform%20)/3tier.png)
+GitHub: Source code version control
+Jenkins: CI/CD pipeline automation
+SonarQube: Code quality checks
+OWASP: Software security improvement
+Docker: Image creation
+Trivy: File system and image scanning
+Kubernetes: Container deployment, version updates, and load balancing
+Prometheus & Grafana: Monitoring
+Helm: Installing Node Exporter on Kubernetes Cluster to expose metrics
+**2. AWS Infrastructure using IaC (Terraform)**
+Step into the world of Infrastructure as Code (IaC) with this project that automates a 3-tier web application, based on a design provided by AWS in one of their workshops.
 
-3. Azure infrastructure using IAC ( Terraform ) - Managing Infrastructure in Azure Cloud using Terraform. - This is an Sample Project to deploy an Vm and File share in A Resoruce Group and to secure the data using a Backup Configuration.
-                AZURE Services Used:
-                                  Resource Group, Linux Virtual Machines, Vnet , Subnet , Network Security Group , Storage Account with Static website Enabled , Recovery Service Vault, Backup Policies
+AWS Services Used:
 
-4. Azure Yaml Pipeline for Infra Automation - Tierd of Using Manual approach in Deploying infrastructure on Cloud ? Try using this Yaml Pipeline to automate the Infrastructure at ease.
-                A code commit to an specific branch will trigger the pipeline in Azure Devops Hosted Agent ( linux Vm )
-                The Pipeline Have 3 Stages
-   
-                              
-   
-               
-                
-          
+VPC, Subnet, Security Groups, EC2 Instances
+Aurora MySQL Database, S3 Bucket, Load Balancers, Auto Scaling, IAM
+Using Terraform, I deployed a 3-tier web application on AWS Cloud, modularizing each component for reusability.
+
+!3-Tier Architecture/3tier.png)
+
+**3. Azure Infrastructure using IaC (Terraform)**
+Manage infrastructure in Azure Cloud using Terraform. This sample project deploys a VM and file share in a Resource Group and secures the data with a backup configuration.
+
+Azure Services Used:
+
+Resource Group, Linux Virtual Machines, VNet, Subnet
+Network Security Group, Storage Account with Static Website Enabled
+Recovery Services Vault, Backup Policies
+**4. Azure YAML Pipeline for Infra Automation**
+Tired of manually deploying infrastructure on the cloud? Use this YAML pipeline to automate the process with ease.
+
+A code commit to a specific branch triggers the pipeline in an Azure DevOps hosted agent (Linux VM). 
+
+The pipeline includes three stages:
+
+I have 3 stages
+
+stage1 = Terraform plan
+Multiple tasks within Stage 1 =
+
+. Code checkout
+. terraform install
+. terraform init
+. terraform validate
+. terraform fmt
+. terraform plan
+. archiving the plan
+. publishing artifact
+
+stage2 = terraform deploy
+Multiple tasks within Stage 2  ( depends upon stage 1 and start only if succeeded )
+
+terraform install
+download build artifact
+extract the plan
+init
+apply 
+
+
+stage3  ( approval process to complete this stage) 
+terraform destroy
