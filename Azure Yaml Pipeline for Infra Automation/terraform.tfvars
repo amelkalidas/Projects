@@ -1,0 +1,5 @@
+prod-rg = "prodrg"
+location = "eastus"
+prod-vnet-name = "vnet01"
+public-subnet-name = "publicsub"
+prod-public-nsg = "publisnsg"
