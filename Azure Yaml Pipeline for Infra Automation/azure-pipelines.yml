@@ -1,0 +1,13 @@
+resources:
+   pipelines:
+     - pipeline: TF-CI-PIPELINE
+       source: CI-PIPELINE
+       project: TF_AUTOMATION
+       trigger: true
+
+pool: Hostedagent
+
+steps:
+  - bash: echo "CD  runs after CI-PIPELINE completes"
+  
+
