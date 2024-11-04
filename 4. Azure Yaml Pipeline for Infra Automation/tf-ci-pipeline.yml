@@ -1,0 +1,124 @@
+name: $(BuildDefinitionName)_$(date:yyyyMMdd)$(rev:.r)
+trigger: none
+
+pool: Hostedagent
+
+
+stages:
+    - stage: Terraform_plan
+      jobs:
+          - job: terraform_plan
+            steps:
+                
+                - checkout: self
+                - task: TerraformInstaller@1
+                  inputs:
+                    terraformVersion: 'latest'
+
+
+                - task: TerraformTaskV4@4
+                  displayName: 'terraform init'
+                  inputs:
+                    provider: 'azurerm'
+                    command: 'init'
+                    workingDirectory: '$(System.DefaultWorkingDirectory)'
+                    backendServiceArm: 'Terraform_automation'
+                    backendAzureRmResourceGroupName: '29102024'
+                    backendAzureRmStorageAccountName: 'tfstatefile29'
+                    backendAzureRmContainerName: 'devtfstate'
+                    backendAzureRmKey: 'client-dev-terraform.tfstate'
+                
+                - task: TerraformTaskV4@4
+                  displayName: 'validate the config'
+                  inputs:
+                    provider: 'azurerm'
+                    command: 'validate'
+                    workingDirectory: '$(System.DefaultWorkingDirectory)'
+                - task: TerraformTaskV4@4
+                  displayName: 'Plan the tf config'
+                  inputs:
+                    provider: 'azurerm'
+                    command: 'plan'
+                    commandOptions: '-input=false -out="$(System.DefaultWorkingDirectory)/tfplanfile"'
+                    environmentServiceNameAzureRM: 'Terraform_automation'
+                
+                - task: CmdLine@2
+                  displayName: 'Archiving the Plan'
+                  inputs:
+                    script: 'zip -r $(Build.ArtifactStagingDirectory)/$(Build.BuildId)build.zip . -x ".*"'
+                    workingDirectory: '$(System.DefaultWorkingDirectory)'
+                - task: PublishBuildArtifacts@1
+                  displayName: 'Publishing Artifact'
+                  inputs:
+                    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+                    ArtifactName: '$(Build.BuildId)-tfplan'
+                    publishLocation: 'Container'
+    
+    - stage: TFDeploy
+      dependsOn: [Terraform_plan]
+      condition: succeeded('terraform_plan')
+
+
+      jobs:
+        - job: terraform_deploy
+          steps:
+            - checkout: none
+            - task: TerraformInstaller@1
+              inputs:
+                terraformVersion: 'latest'
+            - task: DownloadBuildArtifacts@1
+              displayName: 'Download Terraform Plan Artifact'
+              inputs:
+                buildType: 'current'
+                downloadType: 'single'
+                artifactName: '$(Build.BuildId)-tfplan'
+                downloadPath: '$(System.ArtifactsDirectory)'
+            
+            - task: ExtractFiles@1
+              displayName: 'Extract Terraform Plan Artifact'
+              inputs:
+                archiveFilePatterns: '$(System.ArtifactsDirectory)/$(Build.BuildId)-tfplan/$(Build.BuildId)build.zip'
+                destinationFolder: '$(System.DefaultWorkingDirectory)/terraform/'
+                cleanDestinationFolder: false
+                overwriteExistingFiles: true
+            - task: TerraformTaskV4@4
+              inputs:
+                provider: 'azurerm'
+                command: 'init'
+                workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/'
+                backendServiceArm: 'Terraform_automation'
+                backendAzureRmResourceGroupName: '29102024'
+                backendAzureRmStorageAccountName: 'tfstatefile29'
+                backendAzureRmContainerName: 'devtfstate'
+                backendAzureRmKey: 'client-dev-terraform.tfstate'
+            - task: TerraformTaskV4@4
+              inputs:
+                provider: 'azurerm'
+                command: 'plan'
+                workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/'
+                commandOptions: '--input=false'
+                environmentServiceNameAzureRM: 'Terraform_automation'
+            
+            - task: TerraformTaskV4@4
+              inputs:
+                provider: 'azurerm'
+                command: 'apply'
+                workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/'
+                commandOptions: '-input=false -auto-approve'
+                environmentServiceNameAzureRM: 'Terraform_automation'
+    - stage: Terraform_destroy
+      dependsOn: [TFDeploy]
+      jobs:
+        - deployment: tf_destroy
+          environment: myenv
+          strategy: 
+           runOnce:
+              deploy:                
+                steps:
+                  - task: TerraformTaskV4@4
+                    inputs:
+                      provider: 'azurerm'
+                      command: 'destroy'
+                      workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/'
+                      commandOptions: '--input=false'
+                      environmentServiceNameAzureRM: 'Terraform_automation'

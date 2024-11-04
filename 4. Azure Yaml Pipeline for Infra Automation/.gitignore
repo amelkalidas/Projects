@@ -1,0 +1,4 @@
+.terraform*
+prod-az-tfbackend
+terraform.tfvars
+.terraform.lock.hcl
